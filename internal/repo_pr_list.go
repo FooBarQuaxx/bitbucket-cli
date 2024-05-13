@@ -10,6 +10,8 @@ import (
 type RepoPrListCmd struct {
 	State string `arg:"-s,--state,env:BITBUCKET_LIST" help:"PR State, any of: ALL, OPEN, DECLINED, MERGED"`
 	Json  bool   `arg:"--json"`
+	Limit int    `arg:"--limit" default:"-1"`
+	Start int    `arg:"--start" default:"-1"`
 }
 
 func (b *BitbucketCLI) repoPrList(cmd *RepoCmd) {
@@ -38,6 +40,14 @@ func (b *BitbucketCLI) repoPrList(cmd *RepoCmd) {
 			return
 		}
 		opts["state"] = inputUpper
+	}
+
+	if lCmd.Limit != -1 {
+		opts["limit"] = lCmd.Limit
+	}
+
+	if lCmd.Start != -1 {
+		opts["start"] = lCmd.Start
 	}
 
 	prs, err := b.client.DefaultApi.GetPullRequestsPage(cmd.ProjectKey, cmd.Slug, opts)
