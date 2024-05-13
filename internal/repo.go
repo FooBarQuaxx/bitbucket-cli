@@ -7,6 +7,7 @@ type RepoCmd struct {
 	PrCmd       *RepoPrCmd   `arg:"subcommand:pr"`
 	BranchCmd   *BranchCmd   `arg:"subcommand:branch"`
 	SecurityCmd *SecurityCmd `arg:"subcommand:security"`
+	CommitCmd   *CommitCmd   `arg:"subcommand:commit"`
 }
 
 func (b *BitbucketCLI) RunRepoCmd(cmd *RepoCmd) {
@@ -26,6 +27,11 @@ func (b *BitbucketCLI) RunRepoCmd(cmd *RepoCmd) {
 
 	if cmd.SecurityCmd != nil {
 		b.securityCmd(cmd)
+		return
+	}
+
+	if cmd.CommitCmd != nil {
+		b.commitCmd(cmd)
 		return
 	}
 
