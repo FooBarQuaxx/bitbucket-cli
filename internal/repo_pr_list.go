@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	bitbucket "github.com/gfleury/go-bitbucket-v1"
 	"strings"
@@ -8,6 +9,9 @@ import (
 
 type RepoPrListCmd struct {
 	State string `arg:"-s,--state,env:BITBUCKET_LIST" help:"PR State, any of: ALL, OPEN, DECLINED, MERGED"`
+	Json  bool   `arg:"--json"`
+	Limit int    `arg:"--limit" default:"-1"`
+	Start int    `arg:"--start" default:"-1"`
 }
 
 func (b *BitbucketCLI) repoPrList(cmd *RepoCmd) {
@@ -38,6 +42,14 @@ func (b *BitbucketCLI) repoPrList(cmd *RepoCmd) {
 		opts["state"] = inputUpper
 	}
 
+	if lCmd.Limit != -1 {
+		opts["limit"] = lCmd.Limit
+	}
+
+	if lCmd.Start != -1 {
+		opts["start"] = lCmd.Start
+	}
+
 	prs, err := b.client.DefaultApi.GetPullRequestsPage(cmd.ProjectKey, cmd.Slug, opts)
 	if err != nil {
 		b.logger.Fatalf("unable to get PRs: %v", err)
@@ -45,15 +57,24 @@ func (b *BitbucketCLI) repoPrList(cmd *RepoCmd) {
 	}
 
 	prsResponse, err := bitbucket.GetPullRequestsResponse(prs)
+
 	if err != nil {
 		b.logger.Fatalf("unable to parse PRs response: %v", err)
 	}
 
-	var lines []string
+	if lCmd.Json {
+		jsonOutput, err := json.Marshal(prsResponse)
+		if err != nil {
+			b.logger.Fatalf("unable to marshal JSON: %v", err)
+		}
+		fmt.Printf("%s", jsonOutput)
+	} else {
+		var lines []string
 
-	for _, pr := range prsResponse {
-		lines = append(lines, fmt.Sprintf("%s (ID: %d)", pr.Title, pr.ID))
+		for _, pr := range prsResponse {
+			lines = append(lines, fmt.Sprintf("%s (ID: %d)", pr.Title, pr.ID))
+		}
+
+		fmt.Print(strings.Join(lines, "\n"))
 	}
-
-	fmt.Print(strings.Join(lines, "\n"))
 }
