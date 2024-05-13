@@ -5,7 +5,7 @@ import (
 )
 
 type RepoPrApproveCmd struct {
-	Id int64 `arg:"-i,--id" help:"id of the PR"`
+	Id int `arg:"-i,--id" help:"id of the PR"`
 }
 
 func (b *BitbucketCLI) repoPrApprove(cmd *RepoCmd) {
