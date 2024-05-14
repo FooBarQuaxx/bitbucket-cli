@@ -1,8 +1,12 @@
 build: build/bitbucket-cli
 
 build/bitbucket-cli:
-	mkdir -p build/
-	go build -o ./build/bitbucket-cli ./cmd/bitbucket-cli
+	@mkdir -p build/
+	@go build -o ./build/bitbucket-cli ./cmd/bitbucket-cli
 
 clean:
-	rm -rf build/
+	@rm -fr build/
+
+fmt:
+	@go fmt ./...
+.PHONY: fmt
