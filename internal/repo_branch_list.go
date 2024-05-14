@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"regexp"
@@ -8,9 +9,15 @@ import (
 )
 
 type RepoBranchListCmd struct {
-	Filter string `arg:"-f,--filter" help:"Filter to match branch names against (contains)"`
-	Prefix string `arg:"-p,--prefix" help:"Only list branches that start with this prefix"`
-	Regex  string `arg:"-r,--regex" help:"Only list branches that start with this prefix"`
+	Base    string `arg:"--base" help:"base branch or tag to compare each branch to (for the metadata providers that uses that information)"`
+	Details bool   `arg:"--details" help:"whether to retrieve plugin-provided metadata about each branch"`
+	OrderBy string `arg:"--order-by" help:"ordering of refs either ALPHABETICAL (by name) or MODIFICATION (last updated)"`
+	Filter  string `arg:"-f,--filter" help:"Filter to match branch names against (contains)"`
+	Prefix  string `arg:"-p,--prefix" help:"Only list branches that start with this prefix"`
+	Regex   string `arg:"-r,--regex" help:"Only list branches that start with this prefix"`
+	Limit   int    `arg:"--limit" default:"-1"`
+	Start   int    `arg:"--start" default:"-1"`
+	Json    bool   `arg:"--json"`
 }
 
 func (b *BitbucketCLI) branchCmdList(cmd *RepoCmd) {
@@ -44,6 +51,19 @@ func (b *BitbucketCLI) branchCmdList(cmd *RepoCmd) {
 	if list.Filter != "" {
 		optionals["filterText"] = list.Filter
 	}
+	if list.Base != "" {
+		optionals["base"] = list.Base
+	}
+	optionals["details"] = list.Details
+	if list.OrderBy != "" {
+		optionals["orderBy"] = list.OrderBy
+	}
+	if list.Limit != -1 {
+		optionals["limit"] = list.Limit
+	}
+	if list.Start != -1 {
+		optionals["start"] = list.Start
+	}
 	response, err := b.client.DefaultApi.GetBranches(cmd.ProjectKey, cmd.Slug, optionals)
 
 	if err != nil {
@@ -57,8 +77,22 @@ func (b *BitbucketCLI) branchCmdList(cmd *RepoCmd) {
 		return
 	}
 
-	for _, branch := range branches {
-		if filterFunction(branch) {
+	filterdBranches := []bitbucketv1.Branch{}
+	for _, b := range branches {
+		if filterFunction(b) {
+			filterdBranches = append(filterdBranches, b)
+		}
+	}
+
+	if list.Json {
+		jsonOutput, err := json.Marshal(filterdBranches)
+		if err != nil {
+			b.logger.Fatalf("unable to marshal JSON: %v", err)
+		}
+		fmt.Printf("%s", jsonOutput)
+
+	} else {
+		for _, branch := range filterdBranches {
 			fmt.Printf("%s \n", branch.DisplayID)
 		}
 	}
